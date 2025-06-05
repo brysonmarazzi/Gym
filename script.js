@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/YOUR_DEPLOYED_SCRIPT_ID/exec"; // ← Replace this
+const API_URL = "https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLj2ZXF4zNoLkRtbsXeyYTmH4TRqGPglonOzqsiyFexPEb6t3LqNnJrIgraYVh1ADHr6tG8c3hm7JLavAcfdxvYjGh44-sCpoyDKyrIh7c4VC5f-eircdi2XOHsW6BVpE7aOC78mTV9iZRk2fY8VLDs7vXQjPndclH5mkF02koLnzPV9qiI5DXbLjguUiOwCTr2KXFjfN9lrc_boQWref3BFSu_mE6zoKAIBvEAeKHpr47aCOSeaFC9yoTMrakHKzDgGBo0R_hfjEi6Gplt0DK-FYYss1g&lib=MyWYOlWcEa0--mvqglW6D-neLMPne0zxx";
 
 fetch(API_URL)
   .then(res => res.json())
