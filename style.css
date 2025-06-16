@@ -1,25 +1,24 @@
-body {
-  font-family: sans-serif;
-  margin: 0;
-  padding: 1rem;
-  background: #f9f9f9;
-  color: #333;
-}
+  body {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 1rem;
+    background: #f9f9f9;
+    color: #333;
+  }
 
-h1 {
-  text-align: center;
-}
+  h1 {
+    text-align: center;
+  }
 
-.chart-container {
-  width: 100%;
-  max-width: 600px;
-  margin: 30px auto;
-}
+  .chart-container {
+    width: 100%;
+    max-width: 600px;
+    margin: 30px auto;
+  }
 
-canvas {
-  background: #fff;
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  padding: 10px;
-}
-
+  canvas {
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    padding: 10px;
+  }

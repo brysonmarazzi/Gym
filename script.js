@@ -3,6 +3,67 @@ const API_URL = "https://script.googleusercontent.com/macros/echo?user_content_k
 fetch(API_URL)
   .then(res => res.json())
   .then(data => {
+    // Find most recent workout
+    let mostRecentDate = null;
+    let mostRecentWorkout = null;
+
+    for (const day in data) {
+      const exercises = data[day];
+      for (const exercise in exercises) {
+        const entries = exercises[exercise];
+        const dates = Object.keys(entries).sort((a, b) => new Date(b) - new Date(a));
+        if (dates.length > 0) {
+          const latestDate = dates[0];
+          if (!mostRecentDate || new Date(latestDate) > new Date(mostRecentDate)) {
+            mostRecentDate = latestDate;
+            mostRecentWorkout = day;
+          }
+        }
+      }
+    }
+
+    // Create and display most recent workout info
+    if (mostRecentDate) {
+      const recentWorkoutDiv = document.createElement("div");
+      recentWorkoutDiv.className = "recent-workout";
+      recentWorkoutDiv.style.cssText = `
+        padding: 12px 20px;
+        background: linear-gradient(145deg, #ffffff, #f5f7fa);
+        margin: 0 auto 20px auto;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        max-width: 400px;
+      `;
+      
+      const formattedDate = new Date(mostRecentDate).toLocaleDateString('en-US', { 
+        month: 'short',
+        day: 'numeric'
+      });
+      
+      recentWorkoutDiv.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 16px; justify-content: center;">
+          <div style="
+            background: #4a90e2;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.9em;
+          ">${formattedDate}</div>
+          <div>
+            <div style="font-size: 0.85em; color: #666; margin-bottom: 2px; text-align: center;">Last Workout</div>
+            <div style="font-weight: 600; color: #333; text-align: center;">${mostRecentWorkout}</div>
+          </div>
+        </div>
+      `;
+      
+      document.body.insertBefore(recentWorkoutDiv, document.getElementById("charts"));
+    }
+
     const container = document.getElementById("charts");
 
     for (const day in data) {
