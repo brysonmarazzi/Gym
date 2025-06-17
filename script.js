@@ -24,17 +24,43 @@ fetch(API_URL)
 
     // Create and display most recent workout info
     if (mostRecentDate) {
+      // Create fixed header container
+      const headerContainer = document.createElement("div");
+      headerContainer.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        padding: 16px 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        z-index: 1000;
+      `;
+
+      // Add title
+      const title = document.createElement("h1");
+      title.textContent = "Bryson's Workouts";
+      title.style.cssText = `
+        margin: 0 0 16px 0;
+        text-align: center;
+        font-size: 24px;
+        font-weight: 600;
+        color: #262626;
+      `;
+      headerContainer.appendChild(title);
+
       const recentWorkoutDiv = document.createElement("div");
       recentWorkoutDiv.className = "recent-workout";
       recentWorkoutDiv.style.cssText = `
         padding: 12px 20px;
         background: linear-gradient(145deg, #ffffff, #f5f7fa);
-        margin: 0 auto 20px auto;
+        margin: 0 auto;
         border-radius: 12px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         display: flex;
+        flex-direction: column;
         align-items: center;
-        justify-content: center;
+        gap: 16px;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         max-width: 400px;
       `;
@@ -64,7 +90,7 @@ fetch(API_URL)
           <a href="https://docs.google.com/spreadsheets/d/1hoejei9jV6anWqj2mdSdxjniOmWlZQF4or6Q35pQQwI/edit?usp=drivesdk" 
              style="
                display: inline-block;
-               background:rgb(90, 197, 110);
+               background: rgb(90, 197, 110);
                color: white;
                padding: 6px 12px;
                border-radius: 6px;
@@ -76,17 +102,20 @@ fetch(API_URL)
                min-width: 120px;
                text-align: center;
              "
-             onmouseover="this.style.backgroundColor='#357abd'"
-             onmouseout="this.style.backgroundColor='#4a90e2'">
+             onmouseover="this.style.backgroundColor='rgb(39, 126, 55)'"
+             onmouseout="this.style.backgroundColor='rgb(90, 197, 110)'">
             Go to Google Sheets
           </a>
         </div>
       `;
       
-      document.body.insertBefore(recentWorkoutDiv, document.getElementById("charts"));
+      headerContainer.appendChild(recentWorkoutDiv);
+      document.body.insertBefore(headerContainer, document.getElementById("charts"));
     }
 
     const container = document.getElementById("charts");
+    // Add padding to the top of the charts container to prevent overlap with fixed header
+    container.style.paddingTop = "100px";
 
     // Create and add footer
     const footer = document.createElement("div");
@@ -106,9 +135,9 @@ fetch(API_URL)
 
     // Create three buttons
     const buttons = [
-      { icon: "📊", label: "Stats" },
-      { icon: "📝", label: "Log" },
-      { icon: "⚙️", label: "Settings" }
+      { icon: "📊", label: "Charts" },
+      { icon: "📅", label: "Calendar" },
+      { icon: "💪", label: "1RepMax" }
     ];
 
     buttons.forEach(button => {
