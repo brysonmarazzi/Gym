@@ -392,29 +392,125 @@ async function fetchWorkoutData() {
     let workoutData = storedData ? JSON.parse(storedData) : null;
     let lastFetchDate = storedLastFetch ? new Date(storedLastFetch) : null;
     
-    // Always fetch new data, using lastFetchDate as offset if available
-    const fetchUrl = lastFetchDate 
-      ? `${API_URL}?dateOffset=${lastFetchDate.toISOString().split('T')[0]}`
-      : API_URL;
-      
-    const response = await fetch(fetchUrl);
-    const newData = await response.json();
-    
+    // Return cached data immediately if it exists
     if (workoutData) {
-      // Merge new data with existing data
-      workoutData = mergeWorkoutData(workoutData, newData);
-    } else {
-      workoutData = newData;
+      // Fetch new data asynchronously
+      const fetchUrl = lastFetchDate 
+        ? `${API_URL}?dateOffset=${lastFetchDate.toISOString().split('T')[0]}`
+        : API_URL;
+        
+      fetch(fetchUrl)
+        .then(response => response.json())
+        .then(newData => {
+          // Merge new data with existing data
+          const updatedData = mergeWorkoutData(workoutData, newData);
+          
+          // Update local storage
+          localStorage.setItem('workoutData', JSON.stringify(updatedData));
+          localStorage.setItem('lastFetchDate', new Date().toISOString());
+          
+          // Update the UI with new data
+          updateUI(updatedData);
+        })
+        .catch(error => {
+          console.error('Error fetching new data:', error);
+        });
+      
+      return workoutData;
     }
     
+    // If no cached data, fetch everything
+    const response = await fetch(API_URL);
+    const newData = await response.json();
+    
     // Update local storage
-    localStorage.setItem('workoutData', JSON.stringify(workoutData));
+    localStorage.setItem('workoutData', JSON.stringify(newData));
     localStorage.setItem('lastFetchDate', new Date().toISOString());
     
-    return workoutData;
+    return newData;
   } catch (error) {
     console.error('Error fetching workout data:', error);
     throw error;
+  }
+}
+
+// Function to update UI with new data
+function updateUI(data) {
+  // Find most recent workout
+  let mostRecentDate = null;
+  let mostRecentWorkout = null;
+
+  for (const day in data) {
+    const exercises = data[day];
+    for (const exercise in exercises) {
+      const entries = exercises[exercise];
+      const dates = Object.keys(entries).sort((a, b) => new Date(b) - new Date(a));
+      if (dates.length > 0) {
+        const latestDate = dates[0];
+        if (!mostRecentDate || new Date(latestDate) > new Date(mostRecentDate)) {
+          mostRecentDate = latestDate;
+          mostRecentWorkout = day;
+        }
+      }
+    }
+  }
+  
+  // Update the header with new data
+  if (mostRecentDate) {
+    const recentWorkoutDiv = document.querySelector('.recent-workout');
+    if (recentWorkoutDiv) {
+      const formattedDate = new Date(mostRecentDate).toLocaleDateString('en-US', { 
+        month: 'short',
+        day: 'numeric'
+      });
+      
+      recentWorkoutDiv.innerHTML = `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 16px;">
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <div style="
+              background: #4a90e2;
+              color: white;
+              padding: 8px 12px;
+              border-radius: 8px;
+              font-weight: 500;
+              font-size: 0.9em;
+            ">${formattedDate}</div>
+            <div>
+              <div style="font-size: 0.85em; color: #666; margin-bottom: 2px; text-align: center;">Last Workout</div>
+              <div style="font-weight: 600; color: #333; text-align: center;">${mostRecentWorkout}</div>
+            </div>
+          </div>
+          
+          <a href="https://docs.google.com/spreadsheets/d/1hoejei9jV6anWqj2mdSdxjniOmWlZQF4or6Q35pQQwI/edit?usp=drivesdk" 
+             style="
+               display: inline-block;
+               background: rgb(90, 197, 110);
+               color: white;
+               padding: 6px 12px;
+               border-radius: 6px;
+               text-decoration: none;
+               font-size: 0.85em;
+               font-weight: 500;
+               transition: background-color 0.2s;
+               cursor: pointer;
+               min-width: 120px;
+               text-align: center;
+             "
+             onmouseover="this.style.backgroundColor='rgb(39, 126, 55)'"
+             onmouseout="this.style.backgroundColor='rgb(90, 197, 110)'">
+            Go to Google Sheets
+          </a>
+        </div>
+      `;
+    }
+  }
+
+  // Update the calendar view if it's currently shown
+  const container = document.getElementById("charts");
+  if (container.querySelector('.calendar-grid')) {
+    createCalendarView(data);
+  } else {
+    createChartsView(data);
   }
 }
 
