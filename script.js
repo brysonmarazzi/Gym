@@ -46,12 +46,302 @@ loadingSpinner.appendChild(spinner);
 loadingSpinner.appendChild(loadingText);
 document.body.appendChild(loadingSpinner);
 
+let workoutData = null; // Store the data globally
+
+function createCalendarView(data) {
+  const container = document.getElementById("charts");
+  container.innerHTML = ''; // Clear existing content
+  
+  // Get all workout dates and their exercises
+  const workoutDates = new Map();
+  for (const day in data) {
+    const exercises = data[day];
+    for (const exercise in exercises) {
+      const entries = exercises[exercise];
+      Object.keys(entries).forEach(date => {
+        // Convert date to YYYY-MM-DD format
+        const formattedDate = new Date(date).toISOString().split('T')[0];
+        if (!workoutDates.has(formattedDate)) {
+          workoutDates.set(formattedDate, new Set());
+        }
+        workoutDates.get(formattedDate).add(day); // Store the workout day type instead of exercise
+      });
+    }
+  }
+
+  // Define workout day colors
+  const workoutColors = {
+    'Day1': '#FFD700', // Yellow
+    'Day2': '#4A90E2', // Blue
+    'Day3': '#FF6B6B', // Red
+    'Day4': '#5AC56E'  // Green
+  };
+
+  // Create calendar container
+  const calendarDiv = document.createElement("div");
+  calendarDiv.style.cssText = `
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  `;
+
+  // Create month navigation
+  const navContainer = document.createElement("div");
+  navContainer.style.cssText = `
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  `;
+
+  const prevButton = document.createElement("button");
+  prevButton.textContent = "←";
+  prevButton.style.cssText = `
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    padding: 8px 16px;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+  `;
+  prevButton.onmouseover = () => prevButton.style.backgroundColor = "#f5f5f5";
+  prevButton.onmouseout = () => prevButton.style.backgroundColor = "transparent";
+
+  const nextButton = document.createElement("button");
+  nextButton.textContent = "→";
+  nextButton.style.cssText = prevButton.style.cssText;
+  nextButton.onmouseover = () => nextButton.style.backgroundColor = "#f5f5f5";
+  nextButton.onmouseout = () => nextButton.style.backgroundColor = "transparent";
+
+  // Create month header
+  const monthHeader = document.createElement("div");
+  monthHeader.style.cssText = `
+    text-align: center;
+    font-size: 24px;
+    font-weight: 600;
+    color: #262626;
+  `;
+
+  // Get current month
+  let currentDate = new Date();
+  let currentMonth = currentDate.getMonth();
+  let currentYear = currentDate.getFullYear();
+
+  function updateCalendar() {
+    // Update month header text
+    monthHeader.textContent = new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' });
+    
+    // Remove old grid if it exists
+    const oldGrid = calendarDiv.querySelector('.calendar-grid');
+    if (oldGrid) {
+      oldGrid.remove();
+    }
+
+    // Create calendar grid
+    const grid = document.createElement("div");
+    grid.className = 'calendar-grid';
+    grid.style.cssText = `
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+    `;
+
+    // Add day headers
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    days.forEach(day => {
+      const dayHeader = document.createElement("div");
+      dayHeader.style.cssText = `
+        text-align: center;
+        font-weight: 500;
+        color: #666;
+        padding: 8px;
+      `;
+      dayHeader.textContent = day;
+      grid.appendChild(dayHeader);
+    });
+
+    // Get first day of month and total days
+    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+    const totalDays = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+    // Add empty cells for days before first of month
+    for (let i = 0; i < firstDay; i++) {
+      const emptyCell = document.createElement("div");
+      emptyCell.style.cssText = `
+        aspect-ratio: 1;
+        background: #f8f8f8;
+        border-radius: 8px;
+      `;
+      grid.appendChild(emptyCell);
+    }
+
+    // Add days
+    for (let day = 1; day <= totalDays; day++) {
+      const date = new Date(currentYear, currentMonth, day).toISOString().split('T')[0];
+      const hasWorkout = workoutDates.has(date);
+      const workoutDays = hasWorkout ? Array.from(workoutDates.get(date)) : [];
+      
+      const dayCell = document.createElement("div");
+      dayCell.style.cssText = `
+        aspect-ratio: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        padding: 4px;
+        ${hasWorkout ? `
+          background: ${workoutColors[workoutDays[0]]};
+          color: white;
+          font-weight: 500;
+        ` : `
+          background: white;
+          border: 1px solid #eee;
+        `}
+      `;
+
+      // Add day number
+      const dayNumber = document.createElement("div");
+      dayNumber.textContent = day;
+      dayNumber.style.cssText = `
+        font-size: 16px;
+        font-weight: 500;
+        margin-bottom: 2px;
+      `;
+      dayCell.appendChild(dayNumber);
+
+      // Add workout day indicator
+      if (hasWorkout) {
+        const workoutIndicator = document.createElement("div");
+        workoutIndicator.style.cssText = `
+          font-size: 12px;
+          opacity: 0.9;
+        `;
+        workoutIndicator.textContent = workoutDays[0];
+        dayCell.appendChild(workoutIndicator);
+      }
+      
+      // Add tooltip with workout details
+      if (hasWorkout) {
+        dayCell.title = `Workout: ${workoutDays.join(', ')}`;
+      }
+      
+      grid.appendChild(dayCell);
+    }
+
+    calendarDiv.appendChild(grid);
+  }
+
+  // Add navigation event listeners
+  prevButton.onclick = () => {
+    currentMonth--;
+    if (currentMonth < 0) {
+      currentMonth = 11;
+      currentYear--;
+    }
+    updateCalendar();
+  };
+
+  nextButton.onclick = () => {
+    currentMonth++;
+    if (currentMonth > 11) {
+      currentMonth = 0;
+      currentYear++;
+    }
+    updateCalendar();
+  };
+
+  navContainer.appendChild(prevButton);
+  navContainer.appendChild(monthHeader);
+  navContainer.appendChild(nextButton);
+  calendarDiv.appendChild(navContainer);
+
+  // Initial calendar render
+  updateCalendar();
+  container.appendChild(calendarDiv);
+}
+
+function createChartsView(data) {
+  const container = document.getElementById("charts");
+  container.innerHTML = ''; // Clear existing content
+  
+  for (const day in data) {
+    const exercises = data[day];
+    for (const exercise in exercises) {
+      const entries = exercises[exercise];
+
+      // Sort and format dates
+      const rawDates = Object.keys(entries).sort((a, b) => new Date(a) - new Date(b));
+      const formattedDates = rawDates.map(dateStr => {
+        const parsedDate = new Date(dateStr);
+        return parsedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      });
+      const volumes = rawDates.map(date => entries[date]);
+
+      // Create chart container
+      const chartDiv = document.createElement("div");
+      chartDiv.className = "chart-container";
+
+      const canvas = document.createElement("canvas");
+      canvas.id = `${day}-${exercise}`.replace(/[^a-zA-Z0-9]/g, "_");
+      chartDiv.appendChild(canvas);
+
+      const title = document.createElement("h3");
+      title.textContent = `${exercise} (${day})`;
+      title.style.textAlign = "center";
+      chartDiv.prepend(title);
+
+      container.appendChild(chartDiv);
+
+      // Render chart
+      new Chart(canvas, {
+        type: 'line',
+        data: {
+          labels: formattedDates,
+          datasets: [{
+            label: 'Volume',
+            data: volumes,
+            fill: false,
+            borderColor: 'rgb(54, 162, 235)',
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            tension: 0.2,
+            pointRadius: 5
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            x: {
+              title: { display: true, text: "Date" }
+            },
+            y: {
+              title: { display: true, text: "Volume" },
+              beginAtZero: true
+            }
+          },
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      });
+    }
+  }
+}
+
 fetch(API_URL)
   .then(res => res.json())
   .then(data => {
-    // Remove loading spinner
     console.log("Data fetched successfully");
     loadingSpinner.remove();
+    workoutData = data; // Store the data
     
     // Find most recent workout
     let mostRecentDate = null;
@@ -164,7 +454,6 @@ fetch(API_URL)
     }
 
     const container = document.getElementById("charts");
-    // Add padding to the top of the charts container to prevent overlap with fixed header
     container.style.paddingTop = "100px";
 
     // Create and add footer
@@ -185,9 +474,9 @@ fetch(API_URL)
 
     // Create three buttons
     const buttons = [
-      { icon: "📊", label: "Charts" },
-      { icon: "📅", label: "Calendar" },
-      { icon: "💪", label: "1RepMax" }
+      { icon: "📊", label: "Charts", view: "charts" },
+      { icon: "📅", label: "Calendar", view: "calendar" },
+      { icon: "💪", label: "1RepMax", view: "max" }
     ];
 
     buttons.forEach(button => {
@@ -225,76 +514,23 @@ fetch(API_URL)
       buttonDiv.onmouseover = () => buttonDiv.style.backgroundColor = "#fafafa";
       buttonDiv.onmouseout = () => buttonDiv.style.backgroundColor = "transparent";
       
+      // Add click handler
+      buttonDiv.onclick = () => {
+        if (button.view === "calendar") {
+          createCalendarView(workoutData);
+        } else if (button.view === "charts") {
+          createChartsView(workoutData);
+        }
+        // TODO: Add 1RepMax view
+      };
+      
       footer.appendChild(buttonDiv);
     });
 
-    // Add padding to the bottom of the charts container to prevent footer overlap
-    container.style.paddingBottom = "80px";
-    
     document.body.appendChild(footer);
-
-    for (const day in data) {
-      const exercises = data[day];
-
-      for (const exercise in exercises) {
-        const entries = exercises[exercise];
-
-        // Sort and format dates
-        const rawDates = Object.keys(entries).sort((a, b) => new Date(a) - new Date(b));
-        const formattedDates = rawDates.map(dateStr => {
-          const parsedDate = new Date(dateStr);
-          return parsedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        });
-        const volumes = rawDates.map(date => entries[date]);
-
-        // Create chart container
-        const chartDiv = document.createElement("div");
-        chartDiv.className = "chart-container";
-
-        const canvas = document.createElement("canvas");
-        canvas.id = `${day}-${exercise}`.replace(/[^a-zA-Z0-9]/g, "_");
-        chartDiv.appendChild(canvas);
-
-        const title = document.createElement("h3");
-        title.textContent = `${exercise} (${day})`;
-        title.style.textAlign = "center";
-        chartDiv.prepend(title);
-
-        container.appendChild(chartDiv);
-
-        // Render chart
-        new Chart(canvas, {
-          type: 'line',
-          data: {
-            labels: formattedDates,
-            datasets: [{
-              label: 'Volume',
-              data: volumes,
-              fill: false,
-              borderColor: 'rgb(54, 162, 235)',
-              backgroundColor: 'rgba(54, 162, 235, 0.2)',
-              tension: 0.2,
-              pointRadius: 5
-            }]
-          },
-          options: {
-            responsive: true,
-            scales: {
-              x: {
-                title: { display: true, text: "Date" }
-              },
-              y: {
-                title: { display: true, text: "Volume" },
-                beginAtZero: true
-              }
-            },
-            plugins: {
-              legend: { display: false }
-            }
-          }
-        });
-      }
-    }
+    
+    // Show charts view by default
+    createChartsView(data);
   })
   .catch(err => {
     console.error("Failed to fetch data:", err);
