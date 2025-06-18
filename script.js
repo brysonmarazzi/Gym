@@ -1,4 +1,4 @@
-const API_URL = "https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLhk_ONvJ0fOxMGU0F5icsp1D5FZTyVTJH1l5RZrByjxzbQ_7-1oQBhE7HzCIyPNezHyMN9jEqnxONKPwoNh8PSpNMu2_qbCMC-G7F7AO5ek7zAnoG-p0frVa6wtvHtSjdoptntATXchSUrqt_2pcrCE5eUkb20YlKsVG0K-f91uyDD00Q9rYSBgzYWCpH_ouI6uATHrtB77sYIBQvoaCMSkNk3btCygnQiJWvi4WEvk_xpQq_57ZIgdjaS2HEloSn-4CwlvL0r2TerKvWDoe0uQm_sBbQ&lib=MyWYOlWcEa0--mvqglW6D-neLMPne0zxx";
+const API_URL = "https://script.google.com/macros/s/AKfycbxVj2WLKPJ8S0p08o8Qk_O1JHHDHrNaG90iQF-u3CjWuKitEmMwBOQqzstMjj6tJuoL/exec";
 
 // Create and show loading spinner
 const loadingSpinner = document.createElement("div");
@@ -80,9 +80,9 @@ function createCalendarView(data) {
   // Create calendar container
   const calendarDiv = document.createElement("div");
   calendarDiv.style.cssText = `
-    max-width: 800px;
+    max-width: 100%;
     margin: 0 auto;
-    padding: 20px;
+    padding: 12px;
     background: white;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
@@ -94,7 +94,7 @@ function createCalendarView(data) {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
   `;
 
   const prevButton = document.createElement("button");
@@ -102,10 +102,10 @@ function createCalendarView(data) {
   prevButton.style.cssText = `
     background: none;
     border: none;
-    font-size: 24px;
+    font-size: 20px;
     cursor: pointer;
     color: #666;
-    padding: 8px 16px;
+    padding: 4px 12px;
     border-radius: 8px;
     transition: background-color 0.2s;
   `;
@@ -122,7 +122,7 @@ function createCalendarView(data) {
   const monthHeader = document.createElement("div");
   monthHeader.style.cssText = `
     text-align: center;
-    font-size: 24px;
+    font-size: 18px;
     font-weight: 600;
     color: #262626;
   `;
@@ -148,18 +148,20 @@ function createCalendarView(data) {
     grid.style.cssText = `
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      gap: 8px;
+      gap: 4px;
+      width: 100%;
     `;
 
     // Add day headers
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
     days.forEach(day => {
       const dayHeader = document.createElement("div");
       dayHeader.style.cssText = `
         text-align: center;
         font-weight: 500;
         color: #666;
-        padding: 8px;
+        padding: 4px;
+        font-size: 12px;
       `;
       dayHeader.textContent = day;
       grid.appendChild(dayHeader);
@@ -175,7 +177,7 @@ function createCalendarView(data) {
       emptyCell.style.cssText = `
         aspect-ratio: 1;
         background: #f8f8f8;
-        border-radius: 8px;
+        border-radius: 4px;
       `;
       grid.appendChild(emptyCell);
     }
@@ -193,11 +195,11 @@ function createCalendarView(data) {
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        font-size: 16px;
-        border-radius: 8px;
+        font-size: 12px;
+        border-radius: 4px;
         cursor: pointer;
         transition: all 0.2s;
-        padding: 4px;
+        padding: 2px;
         ${hasWorkout ? `
           background: ${workoutColors[workoutDays[0]]};
           color: white;
@@ -212,9 +214,9 @@ function createCalendarView(data) {
       const dayNumber = document.createElement("div");
       dayNumber.textContent = day;
       dayNumber.style.cssText = `
-        font-size: 16px;
+        font-size: 12px;
         font-weight: 500;
-        margin-bottom: 2px;
+        margin-bottom: 1px;
       `;
       dayCell.appendChild(dayNumber);
 
@@ -222,7 +224,7 @@ function createCalendarView(data) {
       if (hasWorkout) {
         const workoutIndicator = document.createElement("div");
         workoutIndicator.style.cssText = `
-          font-size: 12px;
+          font-size: 10px;
           opacity: 0.9;
         `;
         workoutIndicator.textContent = workoutDays[0];
@@ -336,12 +338,91 @@ function createChartsView(data) {
   }
 }
 
-fetch(API_URL)
-  .then(res => res.json())
+// Function to get the most recent workout date from data
+function getMostRecentWorkoutDate(data) {
+  let mostRecentDate = null;
+  for (const day in data) {
+    const exercises = data[day];
+    for (const exercise in exercises) {
+      const entries = exercises[exercise];
+      const dates = Object.keys(entries);
+      if (dates.length > 0) {
+        const latestDate = dates.sort((a, b) => new Date(b) - new Date(a))[0];
+        if (!mostRecentDate || new Date(latestDate) > new Date(mostRecentDate)) {
+          mostRecentDate = latestDate;
+        }
+      }
+    }
+  }
+  return mostRecentDate;
+}
+
+// Function to merge new data with existing data
+function mergeWorkoutData(existingData, newData) {
+  const mergedData = { ...existingData };
+  
+  for (const day in newData) {
+    if (!mergedData[day]) {
+      mergedData[day] = {};
+    }
+    
+    for (const exercise in newData[day]) {
+      if (!mergedData[day][exercise]) {
+        mergedData[day][exercise] = {};
+      }
+      
+      // Merge the entries, new data takes precedence
+      mergedData[day][exercise] = {
+        ...mergedData[day][exercise],
+        ...newData[day][exercise]
+      };
+    }
+  }
+  
+  return mergedData;
+}
+
+// Function to fetch workout data
+async function fetchWorkoutData() {
+  try {
+    // Check local storage for existing data
+    const storedData = localStorage.getItem('workoutData');
+    const storedLastFetch = localStorage.getItem('lastFetchDate');
+    
+    let workoutData = storedData ? JSON.parse(storedData) : null;
+    let lastFetchDate = storedLastFetch ? new Date(storedLastFetch) : null;
+    
+    // Always fetch new data, using lastFetchDate as offset if available
+    const fetchUrl = lastFetchDate 
+      ? `${API_URL}?dateOffset=${lastFetchDate.toISOString().split('T')[0]}`
+      : API_URL;
+      
+    const response = await fetch(fetchUrl);
+    const newData = await response.json();
+    
+    if (workoutData) {
+      // Merge new data with existing data
+      workoutData = mergeWorkoutData(workoutData, newData);
+    } else {
+      workoutData = newData;
+    }
+    
+    // Update local storage
+    localStorage.setItem('workoutData', JSON.stringify(workoutData));
+    localStorage.setItem('lastFetchDate', new Date().toISOString());
+    
+    return workoutData;
+  } catch (error) {
+    console.error('Error fetching workout data:', error);
+    throw error;
+  }
+}
+
+// Main execution
+fetchWorkoutData()
   .then(data => {
     console.log("Data fetched successfully");
     loadingSpinner.remove();
-    workoutData = data; // Store the data
     
     // Find most recent workout
     let mostRecentDate = null;
@@ -517,9 +598,9 @@ fetch(API_URL)
       // Add click handler
       buttonDiv.onclick = () => {
         if (button.view === "calendar") {
-          createCalendarView(workoutData);
+          createCalendarView(data);
         } else if (button.view === "charts") {
-          createChartsView(workoutData);
+          createChartsView(data);
         }
         // TODO: Add 1RepMax view
       };
