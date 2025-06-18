@@ -1,8 +1,58 @@
 const API_URL = "https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLhk_ONvJ0fOxMGU0F5icsp1D5FZTyVTJH1l5RZrByjxzbQ_7-1oQBhE7HzCIyPNezHyMN9jEqnxONKPwoNh8PSpNMu2_qbCMC-G7F7AO5ek7zAnoG-p0frVa6wtvHtSjdoptntATXchSUrqt_2pcrCE5eUkb20YlKsVG0K-f91uyDD00Q9rYSBgzYWCpH_ouI6uATHrtB77sYIBQvoaCMSkNk3btCygnQiJWvi4WEvk_xpQq_57ZIgdjaS2HEloSn-4CwlvL0r2TerKvWDoe0uQm_sBbQ&lib=MyWYOlWcEa0--mvqglW6D-neLMPne0zxx";
 
+// Create and show loading spinner
+const loadingSpinner = document.createElement("div");
+loadingSpinner.style.cssText = `
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+`;
+
+const spinner = document.createElement("div");
+spinner.style.cssText = `
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid rgb(90, 197, 110);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+`;
+
+const loadingText = document.createElement("div");
+loadingText.textContent = "Loading workout data...";
+loadingText.style.cssText = `
+  color: #666;
+  font-size: 16px;
+  font-weight: 500;
+`;
+
+// Add keyframes for spinner animation
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+document.head.appendChild(style);
+
+loadingSpinner.appendChild(spinner);
+loadingSpinner.appendChild(loadingText);
+document.body.appendChild(loadingSpinner);
+
 fetch(API_URL)
   .then(res => res.json())
   .then(data => {
+    // Remove loading spinner
+    console.log("Data fetched successfully");
+    loadingSpinner.remove();
+    
     // Find most recent workout
     let mostRecentDate = null;
     let mostRecentWorkout = null;
